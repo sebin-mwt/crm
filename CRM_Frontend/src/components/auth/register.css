@@ -1,0 +1,24 @@
+.reg-parent{
+    height: 100vh;
+    width: 100vw;   /* fix here */
+    background-color: rgb(207, 235, 247);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#container{
+    background: white;
+    border-radius: 20px;
+}
+
+#lcontainer{
+    background: white;
+    min-width: 300px;
+    max-width: 650px;
+    min-height: 40%;
+    margin-left: 6px;
+    margin-right: 6px;
+    border-radius: 20px;
+}
