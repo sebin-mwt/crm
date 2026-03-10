@@ -1,7 +1,7 @@
 from pydantic import BaseModel , EmailStr 
-from app.models import UserRoles
+from app.models import UserRoles , ActivityType
 from typing import Optional , List 
-from datetime import datetime
+from datetime import datetime , date
 
 class RegisterUser(BaseModel):
 
@@ -127,4 +127,18 @@ class MemberUpdate(BaseModel):
 
     department: str
     
-    
+class LeadStatusChange(BaseModel):
+
+    curr_lead_id : int
+
+    updated_status_id : int
+
+class ActivityIn(BaseModel):
+
+    type : ActivityType
+
+    description : Optional[str]
+
+    title  : Optional[str] = None
+
+    activity_date : Optional[date] = None

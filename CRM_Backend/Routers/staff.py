@@ -1,14 +1,21 @@
-from fastapi import FastAPI , Depends , HTTPException ,status , APIRouter
+from fastapi import Depends , HTTPException ,status , APIRouter, UploadFile, File, Form
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session , join , joinedload
-from app.schemas import CustomerInstitutionIn , LeadIn , MemberCreate,CustomerUpdate , MemberUpdate
+from app.schemas import CustomerInstitutionIn , LeadIn , MemberCreate,CustomerUpdate , MemberUpdate , LeadStatusChange , ActivityIn
 from app.database import get_db
 from app.models import User , CustomerContacts , CustomerCategory , CustomerInstitution , Lead , LeadStage ,LeadStatus, StatusHistory
-from app.models import Activity , Document
+from app.models import Activity , Document , ActivityType
 from app.auth import get_current_user, required_role
 from datetime import datetime
+import os
+import uuid
+
 app = APIRouter(prefix='/staff')
 
+UPLOAD_DIR = "uploads/documents"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+app.mount("/files", StaticFiles(directory=UPLOAD_DIR), name="files")
 #api to create new Customer Instituition
 @app.post('/customer/create')
 def create_customer(data : CustomerInstitutionIn , db:Session = Depends(get_db) , current_user : User = Depends(required_role('staff'))):
@@ -242,10 +249,7 @@ def delete_member(id: int,db: Session = Depends(get_db),current_user: User = Dep
 
     return {"message": "Member deleted successfully"}
 
-
 #api to get details of a particular lead
-from sqlalchemy.orm import joinedload
-
 @app.get("/{id}/lead")
 def get_lead_details(id: int,db: Session = Depends(get_db),current_user: User = Depends(required_role("staff"))):
 
@@ -264,7 +268,7 @@ def get_lead_details(id: int,db: Session = Depends(get_db),current_user: User = 
                     "id": lead.stage.id,
                     "name": lead.stage.name
                 } ,
-                
+
                 "status": {
                     "id": lead.status.id,
                     "name": lead.status.name
@@ -281,3 +285,217 @@ def get_lead_details(id: int,db: Session = Depends(get_db),current_user: User = 
                 } if lead.institution else None,
             }
     return all_data
+
+
+#api for status change of a lead 
+@app.post('/{lead_id}/status-change')
+def change_status(lead_id : int, data:LeadStatusChange ,db:Session = Depends(get_db), current_user : User = Depends(required_role('staff'))):
+
+    ld = db.query(Lead).filter(Lead.id == lead_id,Lead.staff_id == current_user.id).first()
+
+    if not ld :
+
+        raise HTTPException(status_code=404 , detail= "Lead not found")
+    
+    curr_sts = db.query(LeadStatus).filter(LeadStatus.id == data.curr_lead_id).first()
+
+    new_stats = db.query(LeadStatus).filter(LeadStatus.id == data.updated_status_id).first()
+
+    try :
+
+        if(new_stats.stage_id != curr_sts.stage_id):
+
+            ld.stage_id = new_stats.stage_id
+
+        ld.status_id = new_stats.id
+
+        status_history =  StatusHistory(lead_id = lead_id ,
+                                        old_status_id = curr_sts.id,
+                                        new_status_id = new_stats.id,
+                                        changed_by = current_user.id)
+        db.add(status_history)
+
+        db.commit()
+
+        return{"message":"Lead status changed successfully"}
+    
+    except Exception as e:
+
+        db.rollback()
+        raise HTTPException(status_code=400 , detail="Failed to change lead status")
+
+#api to add a new activity 
+@app.post('/{lead_id}/activity-add', status_code=201)
+def add_new_activity(lead_id : int ,data: ActivityIn, db: Session = Depends(get_db), current_user: User = Depends(required_role('staff'))):
+    
+    ld = db.query(Lead).filter(Lead.id == lead_id , Lead.staff_id == current_user.id).first()
+    
+    if not ld:
+    
+        raise HTTPException(status_code=404 , detail="Lead not found...")
+    
+    try:
+
+        new_activity = Activity(
+
+            title=data.title if data.type != ActivityType.comment else None,
+            type=data.type,
+            description=data.description,
+            lead_id=lead_id,
+            activity_date=data.activity_date if data.type != ActivityType.comment else None,
+            created_by=current_user.id
+        )
+
+        db.add(new_activity)
+        db.commit()
+        db.refresh(new_activity)
+
+        return {"message": "Activity added"}
+
+    except Exception as e:
+
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to log activity , {str(e)}")
+
+#api to get the activities of a lead
+@app.get('/{lead_id}/activities')
+def get_lead_activities(lead_id: int,db: Session = Depends(get_db), current_user: User = Depends(required_role('staff'))):
+
+    activities = db.query(Activity).filter(Activity.lead_id == lead_id,Activity.type != ActivityType.comment).order_by(Activity.activity_date.desc()).all()
+
+    return [
+        {
+            "id": act.id,
+            "type": act.type.value,
+            "title": act.title,
+            "description": act.description,
+            "date": act.activity_date,
+            "created_at": act.created_at
+        }
+        for act in activities
+    ]
+
+
+#api to get the comments of a lead
+@app.get('/{lead_id}/comments')
+def get_all_comments(lead_id: int,db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+
+    ld = db.query(Lead).filter(Lead.id == lead_id).first()
+
+    if not ld:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    comments = db.query(Activity).options(joinedload(Activity.documents)).filter(Activity.lead_id == lead_id,Activity.type == ActivityType.comment).order_by(Activity.created_at.desc()).all()
+
+    result = []
+
+    for act in comments:
+
+        voice_file = act.documents[0].file_path if act.documents else None
+        
+        result.append({
+            "id": act.id,
+            "type": "voice" if voice_file else "text",
+            "text": act.description,
+            "voice_url": voice_file,
+            "created_at": act.created_at,
+            "created_by": act.created_by
+        })
+
+    return result
+
+
+# api to get the status histories
+@app.get('/{lead_id}/history')
+def get_status_history(lead_id: int,db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+
+    ld = db.query(Lead).filter(Lead.id == lead_id).first()
+
+    if not ld:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    stats = db.query(StatusHistory).options(joinedload(StatusHistory.old_status),joinedload(StatusHistory.new_status),joinedload(StatusHistory.staff)).filter(StatusHistory.lead_id == lead_id)\
+            .order_by(StatusHistory.changed_at.desc()).all()
+
+    result = []
+
+    for st in stats:
+        result.append({
+            "id": st.id,
+            "old_status": st.old_status.name if st.old_status else None,
+            "new_status": st.new_status.name if st.new_status else None,
+            "changed_by": st.staff.name if st.staff else None,
+            "changed_at": st.changed_at
+        })
+
+    return result
+
+#api to add a document
+@app.post("/{lead_id}/upload", status_code=201)
+def add_document(lead_id: int, file: UploadFile = File(...),is_voice_comment: bool = Form(False),
+                 db: Session = Depends(get_db),current_user: User = Depends(get_current_user) ):
+
+    ld = db.query(Lead).filter(Lead.id == lead_id).first()
+
+    if not ld:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    try:
+
+        # generate unique filename
+        ext = file.filename.split(".")[-1]
+
+        filename = f"{uuid.uuid4()}.{ext}"
+
+        file_path = os.path.join(UPLOAD_DIR, filename)
+
+        with open(file_path, "wb") as buffer:
+            buffer.write(file.file.read())
+
+        activity_id = None
+
+        if is_voice_comment:
+
+            new_activity = Activity(type=ActivityType.comment,description=None,lead_id=lead_id,created_by=current_user.id )
+
+            db.add(new_activity)
+
+            db.flush()
+
+            activity_id = new_activity.id
+
+        # create document
+        new_doc = Document(file_path=file_path,lead_id=lead_id,
+                           activity_id=activity_id,uploaded_by=current_user.id)
+
+        db.add(new_doc)
+        db.commit()
+
+        return {"message": "Voice comment added" if is_voice_comment else "Document uploaded", }
+
+    except Exception as e:
+
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"failed to add document :{str(e)}")
+
+
+#api to get the documents
+@app.get("/{lead_id}/documents")
+def get_all_documents(lead_id: int,db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+
+    ld = db.query(Lead).filter(Lead.id == lead_id, Lead.staff_id == current_user.id).first()
+
+    if not ld:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    docs = db.query(Document).filter(Document.lead_id == lead_id, Document.activity_id == None).options(joinedload(Document.uploader)).order_by(Document.uploaded_at.desc()).all()
+
+    return [
+        {
+            "id": doc.id,
+            "file_url": f"/{doc.file_path}",  
+            "uploaded_by": doc.uploader.name,
+            "uploaded_at": doc.uploaded_at
+        }
+        for doc in docs
+    ]
