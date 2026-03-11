@@ -129,8 +129,6 @@ class MemberUpdate(BaseModel):
     
 class LeadStatusChange(BaseModel):
 
-    curr_lead_id : int
-
     updated_status_id : int
 
 class ActivityIn(BaseModel):

@@ -1,5 +1,6 @@
 from fastapi import FastAPI , Depends ,status , HTTPException 
 from sqlalchemy.orm import Session
+from fastapi.staticfiles import StaticFiles
 from app.database import get_db , engine
 from fastapi.middleware.cors import CORSMiddleware
 from app import models 
@@ -15,6 +16,8 @@ app = FastAPI()
 app.include_router(management.app)
 app.include_router(manager.router)
 app.include_router(staff.app)
+
+app.mount("/files", StaticFiles(directory="uploads/documents"), name="files")
 
 origin = [
     "http://127.0.0.1:5173",

@@ -15,7 +15,6 @@ app = APIRouter(prefix='/staff')
 UPLOAD_DIR = "uploads/documents"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-app.mount("/files", StaticFiles(directory=UPLOAD_DIR), name="files")
 #api to create new Customer Instituition
 @app.post('/customer/create')
 def create_customer(data : CustomerInstitutionIn , db:Session = Depends(get_db) , current_user : User = Depends(required_role('staff'))):
@@ -297,13 +296,12 @@ def change_status(lead_id : int, data:LeadStatusChange ,db:Session = Depends(get
 
         raise HTTPException(status_code=404 , detail= "Lead not found")
     
-    curr_sts = db.query(LeadStatus).filter(LeadStatus.id == data.curr_lead_id).first()
-
+    curr_sts = db.query(LeadStatus).filter(LeadStatus.id == ld.status_id).first()
     new_stats = db.query(LeadStatus).filter(LeadStatus.id == data.updated_status_id).first()
 
     try :
 
-        if(new_stats.stage_id != curr_sts.stage_id):
+        if(new_stats.stage_id != ld.stage_id):
 
             ld.stage_id = new_stats.stage_id
 
@@ -385,14 +383,14 @@ def get_all_comments(lead_id: int,db: Session = Depends(get_db),current_user: Us
     if not ld:
         raise HTTPException(status_code=404, detail="Lead not found")
     
-    comments = db.query(Activity).options(joinedload(Activity.documents)).filter(Activity.lead_id == lead_id,Activity.type == ActivityType.comment).order_by(Activity.created_at.desc()).all()
+    comments = db.query(Activity).options(joinedload(Activity.documents)).filter(Activity.lead_id == lead_id,Activity.type == ActivityType.comment).order_by(Activity.created_at.asc()).all()
 
     result = []
 
     for act in comments:
 
-        voice_file = act.documents[0].file_path if act.documents else None
-        
+        voice_file = f"http://127.0.0.1:8000{act.documents[0].file_path}" if act.documents else None   
+
         result.append({
             "id": act.id,
             "type": "voice" if voice_file else "text",
@@ -432,8 +430,8 @@ def get_status_history(lead_id: int,db: Session = Depends(get_db),current_user: 
 
 #api to add a document
 @app.post("/{lead_id}/upload", status_code=201)
-def add_document(lead_id: int, file: UploadFile = File(...),is_voice_comment: bool = Form(False),
-                 db: Session = Depends(get_db),current_user: User = Depends(get_current_user) ):
+def add_document(lead_id: int, file: UploadFile = File(...), is_voice_comment: bool = Form(False),
+                 db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
 
     ld = db.query(Lead).filter(Lead.id == lead_id).first()
 
@@ -444,11 +442,12 @@ def add_document(lead_id: int, file: UploadFile = File(...),is_voice_comment: bo
 
         # generate unique filename
         ext = file.filename.split(".")[-1]
-
         filename = f"{uuid.uuid4()}.{ext}"
 
+        # full server path
         file_path = os.path.join(UPLOAD_DIR, filename)
 
+        # save the file
         with open(file_path, "wb") as buffer:
             buffer.write(file.file.read())
 
@@ -456,29 +455,34 @@ def add_document(lead_id: int, file: UploadFile = File(...),is_voice_comment: bo
 
         if is_voice_comment:
 
-            new_activity = Activity(type=ActivityType.comment,description=None,lead_id=lead_id,created_by=current_user.id )
+            new_activity = Activity(type=ActivityType.comment,
+                                    description=None,
+                                    lead_id=lead_id,
+                                    created_by=current_user.id)
 
             db.add(new_activity)
-
             db.flush()
 
             activity_id = new_activity.id
 
-        # create document
-        new_doc = Document(file_path=file_path,lead_id=lead_id,
-                           activity_id=activity_id,uploaded_by=current_user.id)
+        # store the public file URL
+        file_url = f"/files/{filename}"
+
+        new_doc = Document(file_path=file_url,
+                           lead_id=lead_id,
+                           activity_id=activity_id,
+                           uploaded_by=current_user.id)
 
         db.add(new_doc)
         db.commit()
 
-        return {"message": "Voice comment added" if is_voice_comment else "Document uploaded", }
+        return {"message": "Voice comment added" if is_voice_comment else "Document uploaded"}
 
     except Exception as e:
 
         db.rollback()
-        raise HTTPException(status_code=400, detail=f"failed to add document :{str(e)}")
-
-
+        raise HTTPException(status_code=400, detail=f"failed to add document: {str(e)}")
+    
 #api to get the documents
 @app.get("/{lead_id}/documents")
 def get_all_documents(lead_id: int,db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
@@ -493,7 +497,7 @@ def get_all_documents(lead_id: int,db: Session = Depends(get_db),current_user: U
     return [
         {
             "id": doc.id,
-            "file_url": f"/{doc.file_path}",  
+            "file_url": doc.file_path,  
             "uploaded_by": doc.uploader.name,
             "uploaded_at": doc.uploaded_at
         }
