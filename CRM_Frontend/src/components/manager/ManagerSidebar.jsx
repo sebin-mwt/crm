@@ -30,7 +30,7 @@ function ManagerSidebar() {
         "sidebar-link " + (isActive ? "active-link" : "")
       }>
         <i className="fa-solid fa-building me-2"></i>
-        All Customers
+        Customers
       </NavLink>
 
       <NavLink to="/manager/staff" className={({ isActive }) =>

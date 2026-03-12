@@ -17,7 +17,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 #api to create new Customer Instituition
 @app.post('/customer/create')
-def create_customer(data : CustomerInstitutionIn , db:Session = Depends(get_db) , current_user : User = Depends(required_role('staff'))):
+def create_customer(data : CustomerInstitutionIn , db:Session = Depends(get_db) , current_user : User = Depends(required_role(['staff']))):
 
     try :
 
@@ -51,7 +51,7 @@ def create_customer(data : CustomerInstitutionIn , db:Session = Depends(get_db) 
 
 #api to create a new lead
 @app.post('/lead/create',status_code=201)
-def create_new_lead(data : LeadIn , db: Session = Depends(get_db) , current_user : User = Depends(required_role('staff'))):
+def create_new_lead(data : LeadIn , db: Session = Depends(get_db) , current_user : User = Depends(required_role(['staff']))):
 
     # close_date = datetime.strptime(f"{data.expected_closing} 23:59", "%Y-%m-%d %H:%M")
 
@@ -93,7 +93,7 @@ def create_new_lead(data : LeadIn , db: Session = Depends(get_db) , current_user
 @app.get('/all-leads')
 def get_all_leads(db:Session = Depends(get_db) , current_user :User = Depends(get_current_user)):
 
-    leads = db.query(Lead).options(joinedload(Lead.stage),joinedload(Lead.status) , joinedload(Lead.institution),joinedload(Lead.service)).filter(Lead.staff_id == current_user.id).order_by(Lead.id).all()
+    leads = db.query(Lead).options(joinedload(Lead.stage),joinedload(Lead.status) , joinedload(Lead.institution),joinedload(Lead.service)).filter(Lead.staff_id == current_user.id).order_by(Lead.created_at.desc()).all()
 
     if not leads :
 
@@ -134,6 +134,10 @@ def get_all_leads(db:Session = Depends(get_db) , current_user :User = Depends(ge
 
             in_prog +=1
 
+        elif ld.get('stage') == "Post-Sales" :
+
+            won_lead+=1
+
     return {"all_leads" : all_leads, "ld_counts" :{
         "open_ld":open_lead,"in_prog" : in_prog,
         "won_ld" : won_lead , "lost_ld":lost_lead
@@ -169,9 +173,10 @@ def get_a_customer_detail(id : int ,db:Session = Depends(get_db), current_user :
         }
     
     return customer_data
+
 #update customer
 @app.put("/{id}/customer")
-def update_customer(id: int,data: CustomerUpdate,db: Session = Depends(get_db),current_user: User = Depends(required_role("staff"))):
+def update_customer(id: int,data: CustomerUpdate,db: Session = Depends(get_db),current_user: User = Depends(required_role(["staff"]))):
 
     customer = db.query(CustomerInstitution).filter(CustomerInstitution.id == id).first()
 
@@ -191,7 +196,7 @@ def update_customer(id: int,data: CustomerUpdate,db: Session = Depends(get_db),c
 
 #create member
 @app.post("/{id}/member")
-def create_member(id: int,data: MemberCreate,db: Session = Depends(get_db),current_user: User = Depends(required_role("staff"))):
+def create_member(id: int,data: MemberCreate,db: Session = Depends(get_db),current_user: User = Depends(required_role(["staff"]))):
 
     customer = db.query(CustomerInstitution).filter(CustomerInstitution.id == id).first()
 
@@ -215,7 +220,7 @@ def create_member(id: int,data: MemberCreate,db: Session = Depends(get_db),curre
 
 #api to update member details
 @app.put("/{id}/member")
-def update_member(id: int,data: MemberUpdate,db: Session = Depends(get_db),current_user: User = Depends(required_role("staff"))):
+def update_member(id: int,data: MemberUpdate,db: Session = Depends(get_db),current_user: User = Depends(required_role(["staff"]))):
 
     member = db.query(CustomerContacts).filter(CustomerContacts.id == id).first()
 
@@ -236,7 +241,7 @@ def update_member(id: int,data: MemberUpdate,db: Session = Depends(get_db),curre
 
 #api to delete a member
 @app.delete("/{id}/member")
-def delete_member(id: int,db: Session = Depends(get_db),current_user: User = Depends(required_role("staff"))):
+def delete_member(id: int,db: Session = Depends(get_db),current_user: User = Depends(required_role(["staff"]))):
 
     member = db.query(CustomerContacts).filter(CustomerContacts.id == id).first()
 
@@ -250,18 +255,29 @@ def delete_member(id: int,db: Session = Depends(get_db),current_user: User = Dep
 
 #api to get details of a particular lead
 @app.get("/{id}/lead")
-def get_lead_details(id: int,db: Session = Depends(get_db),current_user: User = Depends(required_role("staff"))):
+def get_lead_details( id: int,db: Session = Depends(get_db),current_user: User = Depends(required_role(["staff", "manager", "management"])))    :   
 
-    lead = db.query(Lead).filter(Lead.id == id, Lead.staff_id == current_user.id)\
-        .options(joinedload(Lead.stage),joinedload(Lead.status),joinedload(Lead.service),joinedload(Lead.institution),
-        ).first()
+    query = db.query(Lead).filter(Lead.id == id)
+
+    if current_user.role == "staff":
+        query = query.filter(Lead.staff_id == current_user.id)
+
+    elif current_user.role == "manager":
+        query = query.filter(Lead.manager_id == current_user.id)
+
+    elif current_user.role == "management":
+
+        pass
+
+    lead = query.options(joinedload(Lead.stage),joinedload(Lead.status),joinedload(Lead.service),joinedload(Lead.institution),joinedload(Lead.staff)).first()
 
     if not lead:
+
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    all_data = { "id": lead.id,"title": lead.title,"value": lead.value,"expected_closing": lead.expected_closing,
+    all_data = { "id": lead.id,"title": lead.title,"value": lead.value,
                 
-                "created_at": lead.created_at,
+                "expected_closing": lead.expected_closing, "created_at": lead.created_at,
 
                 "stage": {
                     "id": lead.stage.id,
@@ -282,13 +298,14 @@ def get_lead_details(id: int,db: Session = Depends(get_db),current_user: User = 
                     "id": lead.institution.id,
                     "name": lead.institution.name
                 } if lead.institution else None,
+                "staff": lead.staff.name
             }
     return all_data
 
 
 #api for status change of a lead 
 @app.post('/{lead_id}/status-change')
-def change_status(lead_id : int, data:LeadStatusChange ,db:Session = Depends(get_db), current_user : User = Depends(required_role('staff'))):
+def change_status(lead_id : int, data:LeadStatusChange ,db:Session = Depends(get_db), current_user : User = Depends(required_role(['staff']))):
 
     ld = db.query(Lead).filter(Lead.id == lead_id,Lead.staff_id == current_user.id).first()
 
@@ -324,18 +341,24 @@ def change_status(lead_id : int, data:LeadStatusChange ,db:Session = Depends(get
 
 #api to add a new activity 
 @app.post('/{lead_id}/activity-add', status_code=201)
-def add_new_activity(lead_id : int ,data: ActivityIn, db: Session = Depends(get_db), current_user: User = Depends(required_role('staff'))):
-    
-    ld = db.query(Lead).filter(Lead.id == lead_id , Lead.staff_id == current_user.id).first()
-    
+def add_new_activity(lead_id: int,data: ActivityIn,db: Session = Depends(get_db),current_user: User = Depends(required_role(['staff','manager']))):
+
+    ld = db.query(Lead).options(joinedload(Lead.staff)).filter(Lead.id == lead_id).first()
+
     if not ld:
-    
-        raise HTTPException(status_code=404 , detail="Lead not found...")
-    
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    # Staff restriction
+    if current_user.role == "staff" and ld.staff_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    # Manager restriction
+    if current_user.role == "manager" and ld.staff.manager_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Lead not under your team")
+
     try:
 
         new_activity = Activity(
-
             title=data.title if data.type != ActivityType.comment else None,
             type=data.type,
             description=data.description,
@@ -353,11 +376,12 @@ def add_new_activity(lead_id : int ,data: ActivityIn, db: Session = Depends(get_
     except Exception as e:
 
         db.rollback()
-        raise HTTPException(status_code=400, detail=f"Failed to log activity , {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to log activity, {str(e)}")
+
 
 #api to get the activities of a lead
 @app.get('/{lead_id}/activities')
-def get_lead_activities(lead_id: int,db: Session = Depends(get_db), current_user: User = Depends(required_role('staff'))):
+def get_lead_activities(lead_id: int,db: Session = Depends(get_db), current_user: User = Depends(required_role(['staff','manager']))):
 
     activities = db.query(Activity).filter(Activity.lead_id == lead_id,Activity.type != ActivityType.comment).order_by(Activity.activity_date.desc()).all()
 
@@ -383,7 +407,7 @@ def get_all_comments(lead_id: int,db: Session = Depends(get_db),current_user: Us
     if not ld:
         raise HTTPException(status_code=404, detail="Lead not found")
     
-    comments = db.query(Activity).options(joinedload(Activity.documents)).filter(Activity.lead_id == lead_id,Activity.type == ActivityType.comment).order_by(Activity.created_at.asc()).all()
+    comments = db.query(Activity).options(joinedload(Activity.documents),joinedload(Activity.user)).filter(Activity.lead_id == lead_id,Activity.type == ActivityType.comment).order_by(Activity.created_at.asc()).all()
 
     result = []
 
@@ -397,7 +421,8 @@ def get_all_comments(lead_id: int,db: Session = Depends(get_db),current_user: Us
             "text": act.description,
             "voice_url": voice_file,
             "created_at": act.created_at,
-            "created_by": act.created_by
+            "created_by":act.created_by,
+            "created_by_name": act.user.name
         })
 
     return result
@@ -503,3 +528,5 @@ def get_all_documents(lead_id: int,db: Session = Depends(get_db),current_user: U
         }
         for doc in docs
     ]
+
+

@@ -18,22 +18,12 @@ function OwnerSidebar() {
         Dashboard
       </NavLink>
 
-      <NavLink to="/owner/leads" className="sidebar-link">
-        <i className="fa-solid fa-list-check me-2"></i>
-        All Leads
-      </NavLink>
-
-      <NavLink to="/owner/managers" className="sidebar-link">
-        <i className="fa-solid fa-user-tie me-2"></i>
-        Managers
-      </NavLink>
-
-      <NavLink to="/owner/staff" className="sidebar-link">
+      <NavLink to="/owner/staffs" className="sidebar-link">
         <i className="fa-solid fa-users me-2"></i>
         Staff
       </NavLink>
 
-      <NavLink to="/owner/assign" className="sidebar-link">
+      <NavLink to="/owner/assign-manager" className="sidebar-link">
         <i className="fa-solid fa-user-gear me-2"></i>
         Assign Manager
       </NavLink>

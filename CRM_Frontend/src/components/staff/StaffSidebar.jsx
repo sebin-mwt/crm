@@ -18,11 +18,11 @@ function StaffSidebar() {
       </NavLink>
 
       <NavLink to="/staff/customers" className={({ isActive }) =>`sidebar-link ${isActive ? "active-link" : ""}`}>
-        <i className="fa-solid fa-users me-2"></i> Customers
+        <i className="fa-solid fa-users me-2"></i> Institutions
       </NavLink>
 
-      <NavLink to="/staff/activities" className={({ isActive }) =>`sidebar-link ${isActive ? "active-link" : ""}`} >
-        <i className="fa-solid fa-clipboard-list me-2"></i>My Activities
+      <NavLink to="/staff/analysis" className={({ isActive }) =>`sidebar-link ${isActive ? "active-link" : ""}`} >
+        <i className="fa-solid fa-clipboard-list me-2"></i>Analysis
       </NavLink>
 
     </div>

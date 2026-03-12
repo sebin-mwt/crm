@@ -21,7 +21,7 @@ class LoginUser(BaseModel):
 
 class AssignManagerIn(BaseModel):
 
-    user_id : int 
+    staff_id : int 
 
     manager_id : int
 

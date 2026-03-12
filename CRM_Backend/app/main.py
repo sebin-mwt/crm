@@ -1,11 +1,11 @@
 from fastapi import FastAPI , Depends ,status , HTTPException 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session , joinedload
 from fastapi.staticfiles import StaticFiles
 from app.database import get_db , engine
 from fastapi.middleware.cors import CORSMiddleware
 from app import models 
 from app.auth import hash_password , authenticate_password  , create_access_token , get_current_user
-from app.models import User , Service , CustomerCategory , CustomerInstitution , CustomerContacts
+from app.models import User , Service , CustomerCategory , CustomerInstitution , CustomerContacts , UserRoles
 from app.schemas import RegisterUser , LoginUser
 from Routers import management , manager , staff
 
@@ -84,6 +84,7 @@ def login_user(data : LoginUser , db:Session = Depends(get_db)):
 
     data= {"access_token":access_token ,
         "user_data":{
+            "user_id":user.id,
             "email":user.email,
             "role":user.role    
         } }
@@ -94,21 +95,33 @@ def login_user(data : LoginUser , db:Session = Depends(get_db)):
 @app.get('/users')
 def get_users( db: Session = Depends(get_db) , current_user : User = Depends(get_current_user)):
 
-    users = db.query(User).all()
+    staff_users = db.query(User).filter(User.role == UserRoles.staff).all()
 
-    if users :
+    if staff_users :
         
         user_data = [{
             "id": u.id ,
             "name": u.name,
             "email":u.email ,
+            "role" : u.role,
+            "manager_id": u.manager_id,
+            "is_assigned" :True if u.manager_id else False
+
+        } for u in staff_users]
+
+    managers = db.query(User).filter(User.role == UserRoles.manager).all()
+
+    if managers:
+         
+         manager_data = [{
+            "id": u.id ,
+            "name": u.name,
+            "email":u.email ,
             "role" : u.role
 
-        } for u in users]
+        } for u in managers]
 
-        return user_data
-    
-    return users 
+    return {"staffs":user_data , "managers":manager_data} 
 
 # api for listing the services
 @app.get('/services')

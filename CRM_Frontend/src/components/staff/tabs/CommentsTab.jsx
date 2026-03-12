@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./comment.css"
-function CommentsTab({ leadId, token }) {
+function CommentsTab({ leadId, token, basepath="staff" }) {
 
   const [comments, setComments] = useState([]);
   const [message, setMessage] = useState("");
@@ -27,7 +27,7 @@ function CommentsTab({ leadId, token }) {
 
   const fetchComments = async () => {
 
-    const res = await fetch(`http://127.0.0.1:8000/staff/${leadId}/comments`, {
+    const res = await fetch(`http://127.0.0.1:8000/${basepath}/${leadId}/comments`, {
       headers: { 
         Authorization: `Bearer ${token}` 
     }
@@ -172,28 +172,48 @@ function CommentsTab({ leadId, token }) {
       {/* Chat Messages */}
     <div className="flex-grow-1 overflow-auto mb-3 " style={{ maxHeight: "240px", background:"#f8f9fa", padding:"10px", borderRadius:"6px" }}>
 
-        { comments.length ==0 ?(
-            <div>
-                <p>No  comments</p>
-            </div>
+       {comments.length == 0 ? (
+  <p>No comments</p>
+) : (
 
-        ):(        
-            comments.map((comment) => (
+  comments.map((comment) => {
+      
+    const isMine = comment.created_by === JSON.parse(localStorage.getItem("user")).user_id  ;
 
-            <div key={comment.id} className="mb-2 p-2 bg-white border rounded d-flex flex-column">
+    return (
 
-            <div>{comment.text}</div>
+          <div key={comment.id} className={`d-flex mb-2 ${isMine ? "justify-content-end" : "justify-content-start"}`}>
 
-            {comment.voice_url && (
+            <div className={`p-2 rounded shadow-sm`} style={{ maxWidth: "70%",background: isMine ? "#d1e7dd" : "#ffffff",border: "1px solid #dee2e6"}}>
+
+              {/* User name */}
+              <div className="fw-semibold small mb-1">
+                {comment.created_by_name}
+              </div>
+
+              {/* Text comment */}
+              {comment.text && (
+                <div>{comment.text}</div>
+              )}
+
+              {/* Voice comment */}
+              {comment.voice_url && (
                 <audio controls src={comment.voice_url}></audio>
-            )}
+              )}
 
-            <small className="text-muted">
+              {/* Time */}
+              <div className="text-muted small mt-1">
                 {new Date(comment.created_at).toLocaleString()}
-            </small>
+              </div>
+
             </div>
 
-        )))}
+          </div>
+
+        );
+      })
+
+    )}
 
         <div ref={messagesEndRef}></div>
 

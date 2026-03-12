@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 
-function ActivitiesTab({ leadId, token }) {
+function ActivitiesTab({ leadId, token, basePath = "staff" }) {
 
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchActivities();
-  }, []);
+  }, [leadId]);
 
   const fetchActivities = async () => {
 
@@ -15,7 +15,7 @@ function ActivitiesTab({ leadId, token }) {
 
       setLoading(true);
 
-      const res = await fetch(`http://127.0.0.1:8000/staff/${leadId}/activities`, {
+      const res = await fetch(`http://127.0.0.1:8000/${basePath}/${leadId}/activities`, {
         headers: {
           Authorization: `Bearer ${token}`
         },
@@ -40,7 +40,8 @@ function ActivitiesTab({ leadId, token }) {
   if (loading) return <p>Loading activities...</p>;
 
   return (
-    <div  style={{ maxHeight: "240px",overflow:"scroll"}}>
+
+    <div style={{ maxHeight: "240px", overflow: "auto" }}>
 
       {activities.length === 0 ? (
         <p>No activities</p>
@@ -49,9 +50,9 @@ function ActivitiesTab({ leadId, token }) {
 
           <div key={act.id} className="border-bottom pb-2 mb-2">
 
-            <div>
-             <p title={act.description}> {new Date(act.date).toLocaleDateString("en-GB")} → {act.title}</p>
-            </div>
+            <p title={act.description}>
+              {new Date(act.date).toLocaleDateString("en-GB")} → {act.title}
+            </p>
 
           </div>
 
@@ -59,6 +60,7 @@ function ActivitiesTab({ leadId, token }) {
       )}
 
     </div>
+
   );
 }
 
