@@ -31,11 +31,16 @@ function AssignManager() {
     fetchUsers();
   }, []);
 
- const handleAssign = async (staffId, managerId) => {
+ const handleAssign = async (staffId, managerId , currentManagerId) => {
 
   if (!managerId) {
     alert("Select a manager");
     return;
+  }
+
+  if(managerId === currentManagerId){
+    alert("Same Manager is already assigned");
+    return
   }
 
   const res = await fetch(

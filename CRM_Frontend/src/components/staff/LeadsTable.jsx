@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 function LeadsTable({ leads, handleStatusColor, basePath  }) {
 
   return (
-    <div className='border shadow-sm' style={{ maxHeight: "320px", overflowY: "scroll" }}>
+    <div className='border shadow-sm' style={{ maxHeight: "320px", overflowY: "scroll"}}>
+      
       <table className='table'>
         <thead>
           <tr>
@@ -48,6 +49,7 @@ function LeadsTable({ leads, handleStatusColor, basePath  }) {
           )}
         </tbody>
       </table>
+      
     </div>
   );
 }

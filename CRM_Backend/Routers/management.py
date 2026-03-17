@@ -14,7 +14,6 @@ def get_notifications(db: Session = Depends(get_db),current_user: User = Depends
 
     return {"unassigned_staff_count": counts}
 
-
 #api for updating assigned  
 @app.put("/update-manager")
 def update_manager( data: AssignManagerIn, db: Session = Depends(get_db),current_user: User = Depends(required_role(["management"]))):
@@ -122,64 +121,9 @@ def get_all_staff(db:Session = Depends(get_db) , current_user:User = Depends(req
             "is_active" : u.is_active
         })
 
+    user_data.sort(key=lambda x : x['role'])
+
     return {"employees":user_data}
-
-#get lead data for managemnet
-# @app.get("/{id}/lead")
-# def get_lead_management(id: int,db: Session = Depends(get_db),current_user: User = Depends(required_role(["management"]))):
-
-#     lead = (
-#         db.query(Lead)
-#         .options(
-#             joinedload(Lead.stage),
-#             joinedload(Lead.status),
-#             joinedload(Lead.service),
-#             joinedload(Lead.institution),
-#             joinedload(Lead.staff)
-#         )
-#         .filter(Lead.id == id)
-#         .first()
-#     )
-
-#     if not lead:
-#         raise HTTPException(status_code=404, detail="Lead not found")
-
-#     all_data = {
-
-#         "id": lead.id,
-#         "title": lead.title,
-#         "value": lead.value,
-#         "expected_closing": lead.expected_closing,
-#         "created_at": lead.created_at,
-
-#         "stage": {
-#             "id": lead.stage.id,
-#             "name": lead.stage.name
-#         } if lead.stage else None,
-
-#         "status": {
-#             "id": lead.status.id,
-#             "name": lead.status.name
-#         } if lead.status else None,
-
-#         "service": {
-#             "id": lead.service.id,
-#             "name": lead.service.name
-#         } if lead.service else None,
-
-#         "institution": {
-#             "id": lead.institution.id,
-#             "name": lead.institution.name
-#         } if lead.institution else None,
-
-#         "staff": {
-#             "id": lead.staff.id,
-#             "name": lead.staff.name
-#         } if lead.staff else None
-#     }
-
-#     return all_data
-
 
 #api for getting docs of a lead 
 @app.get("/{lead_id}/documents")
@@ -228,4 +172,59 @@ def get_lead_history_management(lead_id: int,db: Session = Depends(get_db),curre
         }
         for h in history
     ]
-# 	- chart team performance 
+ 
+
+@app.get("/{id}/lead")
+def get_lead_management(id: int,db: Session = Depends(get_db),current_user: User = Depends(required_role(["management"]))):
+
+    lead = (
+        db.query(Lead)
+        .options(
+            joinedload(Lead.stage),
+            joinedload(Lead.status),
+            joinedload(Lead.service),
+            joinedload(Lead.institution),
+            joinedload(Lead.staff)
+        )
+        .filter(Lead.id == id)
+        .first()
+    )
+
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    all_data = {
+
+        "id": lead.id,
+        "title": lead.title,
+        "value": lead.value,
+        "expected_closing": lead.expected_closing,
+        "created_at": lead.created_at,
+
+        "stage": {
+            "id": lead.stage.id,
+            "name": lead.stage.name
+        } if lead.stage else None,
+
+        "status": {
+            "id": lead.status.id,
+            "name": lead.status.name
+        } if lead.status else None,
+
+        "service": {
+            "id": lead.service.id,
+            "name": lead.service.name
+        } if lead.service else None,
+
+        "institution": {
+            "id": lead.institution.id,
+            "name": lead.institution.name
+        } if lead.institution else None,
+
+        "staff": {
+            "id": lead.staff.id,
+            "name": lead.staff.name
+        } if lead.staff else None
+    }
+
+    return all_data

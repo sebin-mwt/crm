@@ -107,8 +107,9 @@ function StaffDashboard() {
           </div>
 
           :
-
-          <LeadsTable leads={leadData} handleStatusColor={handleStatusColor} basePath="/staff"/>
+        <div style={{overflowX:"scroll"}}>  
+          <LeadsTable leads={leadData} handleStatusColor={handleStatusColor} basePath="/staff"/> 
+      </div>
 
         }
 

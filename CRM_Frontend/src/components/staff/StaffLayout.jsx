@@ -7,18 +7,29 @@ function StaffLayout() {
 
   return (
 
+    // <div className='d-flex' style={{ minHeight: "100vh" }}>
+
+    //   <StaffSidebar />
+
+    //   <div style={{ flex: 5 }}>
+    //     <StaffHeader />
+    //     <div className='p-3'>
+    //       <Outlet />
+    //     </div>
+    //   </div>
+
+    // </div>
+
     <div className='d-flex' style={{ minHeight: "100vh" }}>
+  <StaffSidebar />
 
-      <StaffSidebar />
-
-      <div style={{ flex: 5 }}>
-        <StaffHeader />
-        <div className='p-3'>
-          <Outlet />
-        </div>
-      </div>
-
+  <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <StaffHeader />
+    <div style={{ flex: 1, overflowY: "auto", padding: "1rem" }}>
+      <Outlet />
     </div>
+  </div>
+</div>
   )
 }
 

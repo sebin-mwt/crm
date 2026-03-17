@@ -140,6 +140,24 @@ def get_all_services(db:Session = Depends(get_db) , current_user : User = Depend
 
     return data
 
+
+# api for listing the active services
+@app.get('/active-services')
+def get_all_services(db:Session = Depends(get_db) , current_user : User = Depends(get_current_user)):
+
+    all_services = db.query(Service).filter(Service.is_active==True).order_by(Service.id).all()
+
+    data =[
+        {
+            "id":sv.id,
+            "name":sv.name,
+            "is_active": sv.is_active 
+        } 
+        
+    for sv in all_services ]
+
+    return data
+
 #api for getting all customer categories
 @app.get('/customer/category')
 def get_all_customer_category(db:Session = Depends(get_db) , current_user : User = Depends(get_current_user)):
@@ -152,7 +170,16 @@ def get_all_customer_category(db:Session = Depends(get_db) , current_user : User
 @app.get('/customers')
 def get_all_customer_institution(db:Session = Depends(get_db) , current_user : User = Depends(get_current_user)):
 
-    customers = db.query(CustomerInstitution).filter(CustomerInstitution.staff_assigned == current_user.id).order_by(CustomerInstitution.id).all()
+    customers = db.query(CustomerInstitution).order_by(CustomerInstitution.id).all()
 
     return customers
+
+
+#api to get customer institutions
+@app.get('/customers/created')
+def get_all_customer_institution(db:Session = Depends(get_db) , current_user : User = Depends(get_current_user)):
+
+    customers = db.query(CustomerInstitution).filter(CustomerInstitution.staff_assigned == current_user.id).order_by(CustomerInstitution.id).all()
+
+    return customers    
 

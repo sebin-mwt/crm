@@ -106,18 +106,23 @@ function ServiceDisplay() {
                 },
                 body: JSON.stringify(payload)
             })
+
             const data = await res.json()
+            
             if(!res.ok) return alert(data.detail)
+
             alert(data.message)
             setEditService(null)
             setEditValue("")
             getServices()
+
         }catch(error){
             console.log("Error updating service", error)
         }
     }
 
     return (
+        
         <div className='container' style={{height:"80vh", overflowY:"auto"}}>
 
             <div className="row justify-content-center">

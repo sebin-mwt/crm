@@ -76,7 +76,7 @@ function StaffManagerTable({ staffs, managers, onAssign, title }) {
 
               <td>
 
-                <button className="btn btn-sm btn-primary" onClick={()=>onAssign(staff.id , selectedManagers[staff.id])}>
+                <button className="btn btn-sm btn-primary" onClick={()=>onAssign(staff.id , selectedManagers[staff.id], staff.manager_id)}>
                   {staff.is_assigned ? "Update" : "Assign"}
                 </button>
 

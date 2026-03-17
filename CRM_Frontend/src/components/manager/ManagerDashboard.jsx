@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import CountCard from "../staff/CountCard";
-import StatusBarChart from "./StatusBarChart";
 import RecentLeadsCard from "./RecentLeadsCard";
+import StageBarChart from "./StageBarChart";
 
 function ManagerDashboard() {
 
@@ -64,7 +64,7 @@ function ManagerDashboard() {
       <div className="row mb-3">
 
         {[
-          { title: "Open Leads", count: ldCount.open_ld, icon: "fa-solid fa-suitcase", color: "rgb(86, 61, 246)" },
+          { title: "New Leads", count: ldCount.open_ld, icon: "fa-solid fa-suitcase", color: "rgb(86, 61, 246)" },
           { title: "In Progress", count: ldCount.in_prog, icon: "fa-solid fa-suitcase", color: "rgb(209, 215, 27)" },
           { title: "Won Leads", count: ldCount.won_ld, icon: "fa-solid fa-shield-heart", color: "rgb(10, 152, 110)" },
           { title: "Lost Leads", count: ldCount.lost_ld, icon: "fa-solid fa-heart-crack", color: "rgb(249, 65, 65)" }
@@ -76,10 +76,15 @@ function ManagerDashboard() {
 
       <hr />
 
+     
       <div className="row mt-4">
+
+        { leadData.length > 0 && (
         <div className="col-md-7">
-          <StatusBarChart leads={leadData} />
+          <StageBarChart leads={leadData} />
         </div>
+        )
+      }
 
         <div className="col-md-5">
           <RecentLeadsCard leads={leadData} handleStatusColor={handleStatusColor} />

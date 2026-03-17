@@ -19,26 +19,20 @@ function ManagerSidebar() {
         </h4>
       </div>
 
-      <NavLink to="/manager/dashboard" className={({ isActive }) =>
-        "sidebar-link " + (isActive ? "active-link" : "")
-      }>
-        <i className="fa-solid fa-chart-pie me-2"></i>
-        Dashboard
+      <NavLink to="/manager/dashboard" className={({ isActive }) => "sidebar-link " + (isActive ? "active-link" : "")}>
+        <i className="fa-solid fa-chart-pie me-2"></i> Dashboard
       </NavLink>
 
-      <NavLink to="/manager/customers" className={({ isActive }) =>
-        "sidebar-link " + (isActive ? "active-link" : "")
-      }>
-        <i className="fa-solid fa-building me-2"></i>
-        Customers
+      <NavLink to="/manager/customers" className={({ isActive }) =>"sidebar-link " + (isActive ? "active-link" : "")}>
+        <i className="fa-solid fa-building me-2"></i>  All Leads
       </NavLink>
 
-      <NavLink to="/manager/staff" className={({ isActive }) =>
+      {/* <NavLink to="/manager/staff" className={({ isActive }) =>
         "sidebar-link " + (isActive ? "active-link" : "")
       }>
         <i className="fa-solid fa-users me-2"></i>
         Staff Management
-      </NavLink>
+      </NavLink> */}
 
        <NavLink to="/manager/configuration" className="sidebar-link">
         <i className="fa-solid fa-gear me-2"></i>Configuration

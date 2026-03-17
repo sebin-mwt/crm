@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-function StatusBarChart({ leads }) {
+function StageBarChart({ leads }) {
 
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
@@ -9,19 +9,15 @@ function StatusBarChart({ leads }) {
 
     if (!leads) return;
 
-    // Count leads by status
-    const statusCounts = leads.reduce((acc, lead) => {
+    const stages = ["Pre-Sales", "Opportunity", "Post-Sales", "Closing"];
 
-      const status = lead.status || "Unknown";
+    const values = stages.map(stage =>
 
-      acc[status] = (acc[status] || 0) + 1;
+      leads.filter(lead => lead.stage === stage).length
 
-      return acc;
+    );
 
-    }, {});
-
-    const labels = Object.keys(statusCounts);
-    const values = Object.values(statusCounts);
+    const labels = stages;
 
     const ctx = chartRef.current.getContext("2d");
 
@@ -42,11 +38,9 @@ function StatusBarChart({ leads }) {
             data: values,
             backgroundColor: [
               "#4f46e5",
-              "#10b981",
-              "#ef4444",
-              "#f59e0b",
               "#06b6d4",
-              "#8b5cf6"
+              "#10b981",
+              "#f59e0b"
             ],
             borderRadius: 5
           }
@@ -81,15 +75,12 @@ function StatusBarChart({ leads }) {
 
   return (
 
-    <div className=" p-3" style={{height:"220px"}}>
-
+    <div className="p-3 mb-2" style={{ maxHeight: "300px", width: "100%" }}>
       <h6 className="mb-3">Lead Status Overview</h6>
-
-      <canvas ref={chartRef}></canvas>
-
+      <canvas ref={chartRef} style={{ height: "100%", width: "100%" }}></canvas>
     </div>
 
   );
 }
 
-export default StatusBarChart;
+export default StageBarChart;

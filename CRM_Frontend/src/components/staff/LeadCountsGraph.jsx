@@ -88,7 +88,7 @@ function LeadCountsGraph({ counts }) {
 
   return (
 
-    <div style={{ width:"300px" , height:"300px" }}>
+    <div style={{ maxWidth:"300px" , maxHeight:"300px" }}>
 
       <canvas ref={chartRef}></canvas>
 

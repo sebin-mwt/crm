@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import ManagerLeadsTable from "./ManagerLeadsTable";
+import ManagerLeadsTable from "./tables/ManagerLeadsTable";
 
 function ManagerCustomersPage() {
 

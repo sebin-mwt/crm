@@ -1,17 +1,17 @@
 import React from "react";
 
 function RecentLeadsCard({ leads, handleStatusColor }) {
+
   // Take last 5 leads sorted by created_at
-  const recentLeads = leads
-    .slice()
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 5);
+  const recentLeads = leads.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 4);
 
   return (
+
     <div className="card border shadow-sm mb-4">
       <div className="card-header">
         <strong>Recent Leads</strong>
       </div>
+      
       <div className="card-body p-0">
         <table className="table table-hover mb-0">
           <thead>

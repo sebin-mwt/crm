@@ -10,7 +10,7 @@ function StaffCustomers() {
 
     try {
 
-      const res = await fetch("http://127.0.0.1:8000/customers", {
+      const res = await fetch("http://127.0.0.1:8000/customers/created", {
         headers: {
           Authorization: `Bearer ${token}`
         }

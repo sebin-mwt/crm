@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CountCard from "../staff/CountCard";
 import LeadsTable from "../staff/LeadsTable";
-import TotalRevenueCard from "../staff/TotalRevenueCard";
 import LeadCountsGraph from "../staff/LeadCountsGraph";
 import RevenueChart from "./RevenueChart"
 
@@ -90,7 +89,7 @@ function OwnerDashboard() {
           <CountCard key={idx} title={item.title} count={item.count} iconClass={item.icon} color={item.color} />
         ))}
 
-        {/* <TotalRevenueCard total={totalRevenue} /> */}
+        {/* <TotalRevenueCard total={totalRevenue} />  */}
 
       </div>
 
@@ -100,7 +99,7 @@ function OwnerDashboard() {
         <h4>
           <u>All Leads</u>
         </h4>
-
+      
         <LeadsTable leads={leadData} handleStatusColor={handleStatusColor} basePath="/owner" />
       </div>
 
@@ -111,7 +110,7 @@ function OwnerDashboard() {
       <div className="col-md-4">
        <RevenueChart leads={leadData}/>
       </div>  
-
+    
       <div className="col-md-4 ">
         <LeadCountsGraph counts={ldCount}/>
       </div>

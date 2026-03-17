@@ -4,7 +4,7 @@ function StageCard({ stages, openEditStageModal }) {
   return (
     <div className='col-lg-6 col-md-10 mt-4'>
       <div className='text-end pb-2'>
-        {/* Add Stage button will be handled in StageDisplay */}
+        
       </div>
 
       <div className='border shadow p-3' style={{ minHeight: "395px", maxHeight: "400px", overflowY: "scroll" }}>

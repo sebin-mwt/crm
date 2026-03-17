@@ -61,7 +61,7 @@ def create_lead_stage(data : LeadStageCreate , db:Session = Depends(get_db) , cu
 
                 db.add(LeadStage(name=l))
         db.commit()
-        return {"message":"Leads Added Successfully"}
+        return {"message":"Lead Stage   Added Successfully"}
     
     except:
 
@@ -394,3 +394,4 @@ def get_manager_comments( lead_id: int,db: Session = Depends(get_db),current_use
         })
 
     return result
+
